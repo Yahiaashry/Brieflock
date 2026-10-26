@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/v1/jobs/audit-verify", "schedule": "0 3 * * *" },
+    { "path": "/api/v1/jobs/retention", "schedule": "0 4 * * *" }
+  ]
+}

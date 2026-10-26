@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>BriefLock secure viewer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: #131a2b;
+        --line: #263047;
+        --text: #e7eaf3;
+        --muted: #8b94a9;
+        --accent: #818cf8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        font-size: 12px;
+      }
+      .toolbar {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+        z-index: 10;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #c7d2fe;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #34d399;
+        box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+      }
+      .filename {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--muted);
+      }
+      .chip {
+        flex: none;
+        padding: 2px 6px;
+        border: 1px solid rgba(129, 140, 248, 0.35);
+        border-radius: 5px;
+        background: rgba(129, 140, 248, 0.12);
+        color: #c7d2fe;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .group {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 1px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0e1524;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px 7px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        background: #1c2539;
+      }
+      button:disabled {
+        opacity: 0.32;
+        cursor: not-allowed;
+      }
+      button svg {
+        width: 14px;
+        height: 14px;
+      }
+      .pageinfo,
+      .zoom {
+        min-width: 62px;
+        text-align: center;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .zoom {
+        min-width: 42px;
+      }
+      .viewport {
+        position: relative;
+        display: flex;
+        flex: 1;
+        align-items: flex-start;
+        justify-content: center;
+        overflow: auto;
+        padding: 20px;
+        background:
+          radial-gradient(circle at 50% 0%, #151d31, #0b1020 62%);
+      }
+      .canvas-wrap {
+        position: relative;
+        flex: none;
+        background: #fff;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+      }
+      .canvas-wrap[hidden],
+      .empty[hidden] {
+        display: none;
+      }
+      canvas {
+        display: block;
+      }
+      .watermark {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(9, 1fr);
+        overflow: hidden;
+        pointer-events: none;
+        user-select: none;
+        opacity: 0.11;
+      }
+      .watermark[hidden] {
+        display: none;
+      }
+      .watermark span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(-28deg);
+        color: #0f172a;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+        text-align: center;
+        padding: 0 8px;
+        white-space: nowrap;
+      }
+      .empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        max-width: 430px;
+        margin: auto;
+        padding: 36px 24px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+      .empty strong {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .spinner {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #2c3650;
+        border-top-color: var(--accent);
+        border-radius: 999px;
+        animation: spin 0.8s linear infinite;
+      }
+      .spinner[hidden] {
+        display: none;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (max-width: 620px) {
+        .brand span.label,
+        .toolbar .chip {
+          display: none;
+        }
+        .filename {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span class="label">BriefLock</span>
+        <span class="chip" id="level-chip" hidden></span>
+      </div>
+      <span class="filename" id="filename">Secure document</span>
+      <span class="chip" id="watermark-chip" hidden>Watermarked</span>
+      <div class="group">
+        <button id="prev" type="button" title="Previous page" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+        <span class="pageinfo" id="pageinfo">– / –</span>
+        <button id="next" type="button" title="Next page" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+      </div>
+      <div class="group">
+        <button id="zoom-out" type="button" title="Zoom out" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+        </button>
+        <span class="zoom" id="zoom">100%</span>
+        <button id="zoom-in" type="button" title="Zoom in" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
+        <button id="fit" type="button" title="Fit page to width" disabled>Fit</button>
+      </div>
+    </header>
+
+    <main class="viewport" id="viewport">
+      <div class="empty" id="message">
+        <span class="spinner" id="spinner"></span>
+        <strong id="message-title">Preparing secure view</strong>
+        <span id="message-body">Waiting for the document to be released by BriefLock.</span>
+      </div>
+      <div class="canvas-wrap" id="wrap" hidden>
+        <canvas id="canvas"></canvas>
+        <div class="watermark" id="watermark" aria-hidden="true" hidden></div>
+      </div>
+    </main>
+
+    <script type="module">
+      import "./pdf.worker.mjs";
+      import * as pdfjsLib from "./pdf.mjs";
+
+      const viewportEl = document.getElementById("viewport");
+      const wrap = document.getElementById("wrap");
+      const canvas = document.getElementById("canvas");
+      const context = canvas.getContext("2d", { alpha: false });
+      const messageEl = document.getElementById("message");
+      const spinner = document.getElementById("spinner");
+      const messageTitle = document.getElementById("message-title");
+      const messageBody = document.getElementById("message-body");
+      const filenameEl = document.getElementById("filename");
+      const pageInfoEl = document.getElementById("pageinfo");
+      const zoomEl = document.getElementById("zoom");
+      const levelChip = document.getElementById("level-chip");
+      const watermarkChip = document.getElementById("watermark-chip");
+      const watermarkEl = document.getElementById("watermark");
+      const prevBtn = document.getElementById("prev");
+      const nextBtn = document.getElementById("next");
+      const zoomInBtn = document.getElementById("zoom-in");
+      const zoomOutBtn = document.getElementById("zoom-out");
+      const fitBtn = document.getElementById("fit");
+
+      let pdfDocument = null;
+      let pageNumber = 1;
+      let scale = 1;
+      let fitMode = true;
+      let renderTask = null;
+      let destroyed = false;
+
+      function showMessage(title, body, spinning) {
+        messageEl.hidden = false;
+        wrap.hidden = true;
+        spinner.hidden = !spinning;
+        messageTitle.textContent = title;
+        messageBody.textContent = body;
+      }
+
+      function showDocument() {
+        messageEl.hidden = true;
+        wrap.hidden = false;
+      }
+
+      function setControlsEnabled(enabled) {
+        zoomInBtn.disabled = !enabled;
+        zoomOutBtn.disabled = !enabled;
+        fitBtn.disabled = !enabled;
+        updatePageButtons();
+      }
+
+      function updatePageButtons() {
+        const total = pdfDocument?.numPages ?? 0;
+        prevBtn.disabled = total === 0 || pageNumber <= 1;
+        nextBtn.disabled = total === 0 || pageNumber >= total;
+        pageInfoEl.textContent = total === 0 ? "– / –" : `${pageNumber} / ${total}`;
+      }
+
+      function normaliseWatermark(value) {
+        if (!value || typeof value !== "object") return null;
+        const name = typeof value.name === "string" ? value.name.trim() : "";
+        const issued = typeof value.issued === "string" ? value.issued : "";
+        if (!value.required && !name) return null;
+        let issuedLabel = "";
+        if (issued) {
+          const date = new Date(issued);
+          if (!Number.isNaN(date.getTime())) {
+            issuedLabel =
+              date.toISOString().slice(0, 16).replace("T", " ") + " UTC";
+          }
+        }
+        return { required: Boolean(value.required), name, issuedLabel };
+      }
+
+      function paintWatermark(meta) {
+        watermarkEl.replaceChildren();
+        watermarkChip.hidden = true;
+        watermarkEl.hidden = true;
+        const watermark = normaliseWatermark(meta);
+        if (!watermark?.required) return;
+        const label = [watermark.name || "BriefLock", watermark.issuedLabel]
+          .filter(Boolean)
+          .join(" · ");
+        watermarkChip.hidden = false;
+        watermarkChip.title = label;
+        watermarkEl.hidden = false;
+        const fragment = document.createDocumentFragment();
+        for (let index = 0; index < 27; index += 1) {
+          const cell = document.createElement("span");
+          cell.textContent = label;
+          fragment.append(cell);
+        }
+        watermarkEl.append(fragment);
+      }
+
+      function currentPage() {
+        return pdfDocument?.getPage(pageNumber) ?? null;
+      }
+
+      async function computeFitScale(page) {
+        const unscaled = page.getViewport({ scale: 1 });
+        const available = Math.max(viewportEl.clientWidth - 44, 240);
+        return Math.min(Math.max(available / unscaled.width, 0.45), 1.7);
+      }
+
+      async function render({ keepPosition = true } = {}) {
+        if (!pdfDocument) return;
+        if (renderTask) {
+          renderTask.cancel();
+          try {
+            await renderTask.promise;
+          } catch {
+            /* cancelled */
+          }
+          renderTask = null;
+        }
+        try {
+          const page = await currentPage();
+          if (!page) return;
+          if (fitMode) scale = await computeFitScale(page);
+          const viewport = page.getViewport({ scale });
+          const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+          const scrollTop = viewportEl.scrollTop;
+          const scrollLeft = viewportEl.scrollLeft;
+
+          canvas.width = Math.max(Math.floor(viewport.width * outputScale), 1);
+          canvas.height = Math.max(Math.floor(viewport.height * outputScale), 1);
+          canvas.style.width = `${Math.floor(viewport.width)}px`;
+          canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+          context.save();
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.restore();
+
+          renderTask = page.render({
+            canvasContext: context,
+            viewport,
+            transform:
+              outputScale === 1
+                ? null
+                : [outputScale, 0, 0, outputScale, 0, 0],
+          });
+          await renderTask.promise;
+          renderTask = null;
+
+          if (keepPosition) {
+            viewportEl.scrollTop = scrollTop;
+            viewportEl.scrollLeft = scrollLeft;
+          }
+          zoomEl.textContent = `${Math.round(scale * 100)}%`;
+          updatePageButtons();
+          showDocument();
+        } catch (error) {
+          if (error?.name === "RenderingCancelledException") return;
+          showMessage(
+            "This document could not be displayed.",
+            "The viewer was unable to render the file. Ask your administrator to re-upload it.",
+            false,
+          );
+          window.parent.postMessage({ type: "brieflock:error" }, "*");
+        }
+      }
+
+      async function openDocument(payload) {
+        try {
+          const raw = payload?.data;
+          if (
+            !(raw instanceof ArrayBuffer) &&
+            !ArrayBuffer.isView(raw)
+          ) {
+            throw new Error("Invalid payload");
+          }
+          const bytes =
+            raw instanceof ArrayBuffer
+              ? new Uint8Array(raw)
+              : new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
+          if (bytes.byteLength === 0) throw new Error("Empty document");
+          if (bytes.byteLength > 110 * 1024 * 1024) {
+            throw new Error("Document too large");
+          }
+
+          showMessage("Opening secure view", "Verifying the document…", true);
+          setControlsEnabled(false);
+
+          if (pdfDocument) {
+            await pdfDocument.destroy();
+            pdfDocument = null;
+          }
+          const loadingTask = pdfjsLib.getDocument({
+            data: bytes,
+            isEvalSupported: false,
+            useSystemFonts: true,
+            disableAutoFetch: true,
+            disableStream: true,
+            stopAtErrors: false,
+          });
+          pdfDocument = await loadingTask.promise;
+          if (destroyed) return;
+
+          filenameEl.textContent =
+            typeof payload?.filename === "string" && payload.filename
+              ? payload.filename
+              : "Secure document";
+          filenameEl.title = filenameEl.textContent;
+
+          const level = Number(payload?.level);
+          if (level >= 1 && level <= 3) {
+            levelChip.textContent = `L${level}`;
+            levelChip.hidden = false;
+          } else {
+            levelChip.hidden = true;
+          }
+
+          paintWatermark(payload?.watermark);
+          pageNumber = 1;
+          fitMode = true;
+          setControlsEnabled(true);
+          await render({ keepPosition: false });
+          viewportEl.scrollTop = 0;
+          window.parent.postMessage(
+            { type: "brieflock:loaded", pages: pdfDocument.numPages },
+            "*",
+          );
+        } catch (error) {
+          console.error("BriefLock viewer:", error);
+          showMessage(
+            "This document could not be opened.",
+            "The file failed a viewer check or is not a valid PDF. No content was released.",
+            false,
+          );
+          window.parent.postMessage({ type: "brieflock:error" }, "*");
+        }
+      }
+
+      async function goToPage(next) {
+        if (!pdfDocument) return;
+        const target = Math.min(Math.max(next, 1), pdfDocument.numPages);
+        if (target === pageNumber) return;
+        pageNumber = target;
+        await render();
+      }
+
+      prevBtn.addEventListener("click", () => goToPage(pageNumber - 1));
+      nextBtn.addEventListener("click", () => goToPage(pageNumber + 1));
+      zoomInBtn.addEventListener("click", async () => {
+        if (!pdfDocument) return;
+        fitMode = false;
+        scale = Math.min(scale * 1.2, 4);
+        await render();
+      });
+      zoomOutBtn.addEventListener("click", async () => {
+        if (!pdfDocument) return;
+        fitMode = false;
+        scale = Math.max(scale / 1.2, 0.35);
+        await render();
+      });
+      fitBtn.addEventListener("click", async () => {
+        if (!pdfDocument) return;
+        fitMode = true;
+        await render({ keepPosition: false });
+        viewportEl.scrollTop = 0;
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (!pdfDocument) return;
+        if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          goToPage(pageNumber - 1);
+        } else if (event.key === "ArrowRight" || event.key === "PageDown") {
+          event.preventDefault();
+          goToPage(pageNumber + 1);
+        } else if (event.key === "+" || event.key === "=") {
+          event.preventDefault();
+          zoomInBtn.click();
+        } else if (event.key === "-") {
+          event.preventDefault();
+          zoomOutBtn.click();
+        }
+      });
+
+      let resizeTimer = null;
+      window.addEventListener("resize", () => {
+        if (!fitMode || !pdfDocument) return;
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(() => render(), 140);
+      });
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== window.parent) return;
+        const type = event.data?.type;
+        if (type === "brieflock:ping") {
+          window.parent.postMessage({ type: "brieflock:ready" }, "*");
+        } else if (type === "brieflock:open") {
+          openDocument(event.data);
+        }
+      });
+
+      window.addEventListener("beforeunload", () => {
+        destroyed = true;
+        pdfDocument?.destroy();
+      });
+
+      updatePageButtons();
+      window.parent.postMessage({ type: "brieflock:ready" }, "*");
+    </script>
+  </body>
+</html>

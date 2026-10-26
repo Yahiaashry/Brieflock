@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  readiness:
+    # Skips verification until the app is scaffolded (package-lock.json committed).
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::App not scaffolded yet (no package-lock.json) — skipping verification."
+          fi
+
+  verify:
+    needs: readiness
+    if: needs.readiness.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  # Added with the corresponding milestones (CONTRACT.md — Release gates):
+  #   rls-suite:   cross-firm invisibility probes against local Supabase (release blocker)
+  #   e2e-matrix:  Playwright 3x3 clearance matrix + transfer journeys on a preview deploy
+  #   chain-verify: audit hash-chain tamper-detection test

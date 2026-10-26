@@ -1,0 +1,378 @@
+%PDF-1.4
+% BriefLock demo document
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 6 0 R /F2 7 0 R >> >> /Contents 8 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 6 0 R /F2 7 0 R >> >> /Contents 9 0 R >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 6 0 R /F2 7 0 R >> >> /Contents 10 0 R >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+8 0 obj
+<< /Length 2009 >>
+stream
+q 0.07 0.09 0.16 rg 0 742 612 50 re f Q
+BT
+/F2 15 Tf
+1 1 1 rg
+48 770 Td
+0 TL
+(BRIEFLOCK) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.74 0.78 0.88 rg
+48 754 Td
+0 TL
+(CONFIDENTIAL  ATTORNEY WORK PRODUCT  DEMO DOCUMENT) Tj T*
+ET
+BT
+/F2 19 Tf
+0.06 0.09 0.16 rg
+48 690 Td
+24 TL
+(Dolan v Meridian Holdings) Tj T*
+(Matter File  Demonstrator) Tj T*
+ET
+q 0.87 0.89 0.92 RG 0.6 w 48 640 m 564 640 l S Q
+BT
+/F1 9.5 Tf
+0.15 0.18 0.25 rg
+48 618 Td
+15 TL
+(This synthetic document exists to demonstrate BriefLock's secure) Tj T*
+(viewer, watermarking and audit flow. It contains no real client data.) Tj T*
+ET
+BT
+/F2 12 Tf
+0.15 0.18 0.25 rg
+48 570 Td
+20 TL
+(1. Matter overview) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 548 Td
+17 TL
+(Case: Dolan v Meridian Holdings) Tj T*
+(Court: High Court of Justice, King's Bench Division) Tj T*
+(Claim No.: KB-2026-004182) Tj T*
+(Lead partner: Eleanor Hartwell) Tj T*
+(Client: Dolan Family Office Ltd) Tj T*
+ET
+BT
+/F2 12 Tf
+0.15 0.18 0.25 rg
+48 450 Td
+20 TL
+(2. Summary) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 428 Td
+17 TL
+(The claimant seeks damages arising from an alleged breach of a) Tj T*
+(facilities management agreement dated 14 February 2023.) Tj T*
+(The defendant denies liability and advances a contributory) Tj T*
+(negligence defence. Expert evidence on service levels is due) Tj T*
+(to be exchanged before the case management conference.) Tj T*
+ET
+BT
+/F2 12 Tf
+0.15 0.18 0.25 rg
+48 310 Td
+20 TL
+(3. Viewer checks) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 288 Td
+17 TL
+(Page navigation and zoom should work without network access.) Tj T*
+(The watermark must repeat the viewer's name and issue time.) Tj T*
+(No text layer is exposed; the page is rendered to a canvas.) Tj T*
+(Downloads are separately authorised and recorded by BriefLock.) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.45 0.48 0.55 rg
+48 32 Td
+0 TL
+(BriefLock demo file  synthetic data, not a real legal record.) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.45 0.48 0.55 rg
+516 32 Td
+0 TL
+(Page 1 of 3) Tj T*
+ET
+q 0.87 0.89 0.92 RG 0.6 w 48 48 m 564 48 l S Q
+endstream
+endobj
+9 0 obj
+<< /Length 2269 >>
+stream
+q 0.07 0.09 0.16 rg 0 742 612 50 re f Q
+BT
+/F2 15 Tf
+1 1 1 rg
+48 770 Td
+0 TL
+(BRIEFLOCK) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.74 0.78 0.88 rg
+48 754 Td
+0 TL
+(CONFIDENTIAL  ATTORNEY WORK PRODUCT  DEMO DOCUMENT) Tj T*
+ET
+BT
+/F2 17 Tf
+0.06 0.09 0.16 rg
+48 690 Td
+22 TL
+(Access control notes) Tj T*
+ET
+q 0.87 0.89 0.92 RG 0.6 w 48 662 m 564 662 l S Q
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 638 Td
+18 TL
+(Exact-match clearance) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 618 Td
+17 TL
+(A user sees documents whose security level is exactly equal to) Tj T*
+(their clearance level. Higher documents are withheld; lower) Tj T*
+(documents are also withheld rather than aggregated into a) Tj T*
+(broader view. The rule is applied server-side on every request.) Tj T*
+ET
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 530 Td
+18 TL
+(Security levels) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 510 Td
+17 TL
+(L1  Standard: general matter material, visible to L1 users.) Tj T*
+(L2  Confidential: sensitive strategy and client information.) Tj T*
+(L3  Restricted: highly sensitive material, view-only by default.) Tj T*
+() Tj T*
+(L2 and L3 views always carry a mandatory watermark. L3 downloads) Tj T*
+(are blocked unless the case explicitly allows them.) Tj T*
+ET
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 380 Td
+18 TL
+(Scan gating) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 360 Td
+17 TL
+(Documents become visible only after a clean malware scan.) Tj T*
+(Pending, failed and infected files never produce a signed URL.) Tj T*
+(Quarantined files are retained for audit but are not deliverable.) Tj T*
+() Tj T*
+(Transfers create external case membership only after the) Tj T*
+(designated recipient accepts. Revocation severs future access.) Tj T*
+ET
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 230 Td
+18 TL
+(Denial behaviour) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 210 Td
+17 TL
+(Denied requests receive a uniform response and are written to) Tj T*
+(the audit trail before any content is released. Inaccessible) Tj T*
+(documents are never enumerated in listings or search results.) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.45 0.48 0.55 rg
+48 32 Td
+0 TL
+(BriefLock demo file  synthetic data, not a real legal record.) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.45 0.48 0.55 rg
+516 32 Td
+0 TL
+(Page 2 of 3) Tj T*
+ET
+q 0.87 0.89 0.92 RG 0.6 w 48 48 m 564 48 l S Q
+endstream
+endobj
+10 0 obj
+<< /Length 2217 >>
+stream
+q 0.07 0.09 0.16 rg 0 742 612 50 re f Q
+BT
+/F2 15 Tf
+1 1 1 rg
+48 770 Td
+0 TL
+(BRIEFLOCK) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.74 0.78 0.88 rg
+48 754 Td
+0 TL
+(CONFIDENTIAL  ATTORNEY WORK PRODUCT  DEMO DOCUMENT) Tj T*
+ET
+BT
+/F2 17 Tf
+0.06 0.09 0.16 rg
+48 690 Td
+22 TL
+(Audit, watermarking and retention) Tj T*
+ET
+q 0.87 0.89 0.92 RG 0.6 w 48 662 m 564 662 l S Q
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 638 Td
+18 TL
+(Audit trail) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 618 Td
+17 TL
+(Every allowed view and download records an audit event before) Tj T*
+(the signed URL is issued. Entries are append-only and linked by) Tj T*
+(a hash chain; the chain is verified daily at 03:00 UTC.) Tj T*
+() Tj T*
+(Denials record a reason code such as CLEARANCE_MISMATCH,) Tj T*
+(NOT_CASE_MEMBER or DOWNLOAD_BLOCKED_L3. Audit entries include) Tj T*
+(the actor, case, document, approximate location and timestamp.) Tj T*
+ET
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 500 Td
+18 TL
+(Watermark) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 480 Td
+17 TL
+(The secure viewer overlays the viewer's full name and the UTC) Tj T*
+(issue time across every page. The overlay is generated in the) Tj T*
+(sandboxed viewer and must not be removable by the document.) Tj T*
+(Downloaded files carry the same watermark before delivery.) Tj T*
+ET
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 370 Td
+18 TL
+(Retention and legal hold) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 350 Td
+17 TL
+(Retention is configured per firm and may be overridden per case.) Tj T*
+(Cases under legal hold are skipped by retention sweeps until the) Tj T*
+(hold is released. Archived cases remain readable but block new) Tj T*
+(uploads, transfers and membership changes.) Tj T*
+ET
+BT
+/F2 11 Tf
+0.15 0.18 0.25 rg
+48 250 Td
+18 TL
+(Handling note) Tj T*
+ET
+BT
+/F1 10 Tf
+0.15 0.18 0.25 rg
+56 230 Td
+17 TL
+(This demonstrator is not legal advice and carries no privilege.) Tj T*
+(Do not upload real client material to the demo environment.) Tj T*
+() Tj T*
+(End of document.) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.45 0.48 0.55 rg
+48 32 Td
+0 TL
+(BriefLock demo file  synthetic data, not a real legal record.) Tj T*
+ET
+BT
+/F1 7.5 Tf
+0.45 0.48 0.55 rg
+516 32 Td
+0 TL
+(Page 3 of 3) Tj T*
+ET
+q 0.87 0.89 0.92 RG 0.6 w 48 48 m 564 48 l S Q
+endstream
+endobj
+11 0 obj
+<< /Title (BriefLock Demo Matter File) /Author (BriefLock) /Subject (Synthetic PDF for secure viewer testing) /Creator (BriefLock) /Producer (BriefLock) >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000035 00000 n 
+0000000084 00000 n 
+0000000153 00000 n 
+0000000289 00000 n 
+0000000425 00000 n 
+0000000562 00000 n 
+0000000659 00000 n 
+0000000761 00000 n 
+0000002822 00000 n 
+0000005143 00000 n 
+0000007413 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R /Info 11 0 R >>
+startxref
+7585
+%%EOF
