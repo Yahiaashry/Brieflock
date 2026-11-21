@@ -71,4 +71,4 @@ The Worker configuration uses static assets, a self-binding for internal API cal
 
 ## License
 
-TBD
+
