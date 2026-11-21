@@ -41,6 +41,10 @@ export async function GET(request: Request) {
     }
 
     const status = params.get("status");
+    const caseId = params.get("case_id");
+    if (caseId !== null && !z.string().uuid().safeParse(caseId).success) {
+      throw ApiError.validation("case_id must be a UUID.");
+    }
     const limit = Math.min(
       100,
       Math.max(1, Number.parseInt(params.get("limit") ?? "50", 10) || 50),
@@ -52,16 +56,21 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    if (caseId) transfersQuery = transfersQuery.eq("case_id", caseId);
+
     if (direction === "incoming") {
       transfersQuery = transfersQuery
         .eq("to_firm_id", profile.firm_id)
+        .neq("status", "draft")
         .contains("recipient_user_ids", [profile.id]);
     } else {
       transfersQuery = transfersQuery.eq("from_firm_id", profile.firm_id);
-      const { data: memberships, error } = await auth.supabase
+      let membershipsQuery = auth.supabase
         .from("case_members")
         .select("case_id")
         .eq("user_id", profile.id);
+      if (caseId) membershipsQuery = membershipsQuery.eq("case_id", caseId);
+      const { data: memberships, error } = await membershipsQuery;
 
       if (error) throw new Error("Unable to load transfer case scopes.");
       const caseIds = unique(
@@ -157,7 +166,9 @@ export async function POST(request: Request) {
     }
 
     const inaccessible = (documents as DocumentRecord[]).some(
-      (document) => document.security_level !== profile.clearance_level,
+      (document) => document.security_level !== profile.clearance_level ||
+        document.scan_status !== "clean" || document.superseded ||
+        Boolean(document.retention_marked_at),
     );
     if (inaccessible) {
       throw ApiError.validation("One or more documents are not accessible.");

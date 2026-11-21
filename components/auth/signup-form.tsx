@@ -18,12 +18,15 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthState = {};
 
-export function SignupForm() {
+export function SignupForm({ usernameSignup }: { usernameSignup: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [state, formAction, pending] = useActionState(
     signUpAction,
     initialState,
   );
+  const identifierField = usernameSignup ? "username" : "email";
 
   return (
     <div className="w-full max-w-[440px]">
@@ -36,7 +39,9 @@ export function SignupForm() {
             Create your account
           </h1>
           <p className="mt-1.5 text-[13px] leading-5 text-slate-500">
-            Start a new firm workspace. You will be its first administrator.
+            {usernameSignup
+              ? "Choose a username and password to start a demo workspace."
+              : "Start a new firm workspace. You will be its first administrator."}
           </p>
         </div>
 
@@ -52,6 +57,9 @@ export function SignupForm() {
                 id="full_name"
                 name="full_name"
                 autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={100}
                 placeholder="Marcus Oyelaran"
                 className="pl-9"
                 required
@@ -60,18 +68,22 @@ export function SignupForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="email">Work email</Label>
+            <Label htmlFor={identifierField}>{usernameSignup ? "Username" : "Work email"}</Label>
             <div className="relative">
               <Mail
                 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                 aria-hidden
               />
               <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@firm.com"
+                id={identifierField}
+                name={identifierField}
+                type={usernameSignup ? "text" : "email"}
+                autoComplete={identifierField}
+                autoCapitalize="none"
+                placeholder={usernameSignup ? "marcus" : "you@firm.com"}
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                pattern={usernameSignup ? "[a-zA-Z0-9][a-zA-Z0-9_\\-]{2,29}" : undefined}
                 className="pl-9"
                 required
               />
@@ -112,6 +124,9 @@ export function SignupForm() {
             </p>
           </div>
 
+          {usernameSignup ? (
+            <p className="text-xs text-slate-500">Use sample data in this demo workspace.</p>
+          ) : (
           <label className="flex items-start gap-2.5 text-[11px] leading-4 text-slate-500">
             <input
               type="checkbox"
@@ -123,6 +138,13 @@ export function SignupForm() {
               and administrative change is written to an immutable audit log.
             </span>
           </label>
+          )}
+
+          {state.message && (
+            <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+              {state.message}
+            </p>
+          )}
 
           {state.error && (
             <div

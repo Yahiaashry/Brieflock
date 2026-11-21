@@ -37,6 +37,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   adminOnly?: boolean;
+  securityOnly?: boolean;
   badge?: number;
 }
 
@@ -53,7 +54,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
     label: "Administration",
     items: [
       { href: "/members", label: "Members", icon: Users, adminOnly: true },
-      { href: "/audit", label: "Audit log", icon: ScrollText, adminOnly: true },
+      { href: "/audit", label: "Audit log", icon: ScrollText, securityOnly: true },
       { href: "/settings", label: "Firm settings", icon: Settings, adminOnly: true },
     ],
   },
@@ -104,7 +105,8 @@ function NavContent({
       <nav className="scrollbar-thin mt-6 flex-1 overflow-y-auto px-3 pb-4">
         {navSections.map((section) => {
           const items = section.items.filter(
-            (item) => !item.adminOnly || user.role === "firm_admin",
+            (item) => (!item.adminOnly || user.role === "firm_admin") &&
+              (!item.securityOnly || user.role === "security"),
           );
           if (items.length === 0) return null;
           return (
@@ -242,8 +244,8 @@ export function AppShell({
   }
 
   return (
-    <div className="min-h-dvh bg-slate-50">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-ink-900 lg:block">
+    <div className="min-h-dvh bg-canvas">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-navy lg:block">
         <NavContent
           user={user}
           firmName={firmName}
@@ -259,7 +261,7 @@ export function AppShell({
             className="absolute inset-0 bg-ink-950/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-72 bg-ink-900 shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 w-72 bg-navy shadow-2xl">
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
@@ -346,13 +348,15 @@ export function AppShell({
                     No new notifications.
                   </div>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/audit" className="cursor-pointer">
-                    <ScrollText className="h-4 w-4" />
-                    Review the audit log
-                  </Link>
-                </DropdownMenuItem>
+                {user.role === "security" && <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/audit" className="cursor-pointer">
+                      <ScrollText className="h-4 w-4" />
+                      Review the audit log
+                    </Link>
+                  </DropdownMenuItem>
+                </>}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -373,7 +377,7 @@ export function AppShell({
                     <span className="block text-[10px] leading-3 text-slate-400">
                       {user.role === "firm_admin"
                         ? "Firm administrator"
-                        : user.role}
+                        : user.role === "security" ? "Security personnel" : user.role}
                     </span>
                   </span>
                   <ChevronDown

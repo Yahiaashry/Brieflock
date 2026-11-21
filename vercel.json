@@ -1,6 +1,13 @@
 {
-  "crons": [
-    { "path": "/api/v1/jobs/audit-verify", "schedule": "0 3 * * *" },
-    { "path": "/api/v1/jobs/retention", "schedule": "0 4 * * *" }
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://brieflock.yahiaaa321123.workers.dev/:path*",
+      "permanent": false
+    }
   ]
 }

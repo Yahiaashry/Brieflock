@@ -10,6 +10,14 @@
   --color-ink-900: #0d1322;
   --color-ink-800: #151d30;
   --color-ink-700: #1f2a42;
+  --color-brand: #4f46e5;
+  --color-navy: #0f172a;
+  --color-content: #182438;
+  --color-muted: #52637b;
+  --color-surface: #ffffff;
+  --color-canvas: #f5f7fb;
+  --color-line: #dfe6f0;
+  --color-tint: #edf3ff;
 
   --color-level-1: #475569;
   --color-level-2: #b45309;
@@ -21,7 +29,7 @@
 }
 
 * {
-  border-color: var(--color-slate-200);
+  border-color: var(--color-line);
 }
 
 html {
@@ -29,8 +37,8 @@ html {
 }
 
 body {
-  background-color: var(--color-slate-50);
-  color: var(--color-slate-900);
+  background-color: var(--color-canvas);
+  color: var(--color-content);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   return apiRoute(request, async () => {
     const auth = await authenticate(request);
     const profile = requireActiveProfile(auth);
-    if (profile.role !== "firm_admin") throw ApiError.forbidden();
+    if (profile.role !== "security") throw ApiError.forbidden();
     enforceRateLimit(`user:${profile.id}`, "standard");
 
     const params = new URL(request.url).searchParams;
@@ -67,6 +67,12 @@ export async function GET(request: Request) {
     const { data, error } = await query.returns<AuditEvent[]>();
     if (error) throw new Error("Unable to load audit events.");
 
+    const caseIds = [...new Set((data ?? []).flatMap((event) => event.case_id ? [event.case_id] : []))];
+    const { data: cases, error: casesError } = caseIds.length === 0
+      ? { data: [], error: null }
+      : await auth.supabase.from("cases").select("id, title, case_reference").in("id", caseIds);
+    if (casesError) throw new Error("Unable to load audit case labels.");
+
     const actorIds = [
       ...new Set(
         (data ?? [])
@@ -100,6 +106,7 @@ export async function GET(request: Request) {
             ? actorNames.get(event.actor_user_id) ?? null
             : null,
         })),
+        cases: cases ?? [],
         page: { next_cursor: null },
       },
       request,

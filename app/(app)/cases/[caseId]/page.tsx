@@ -40,30 +40,33 @@ export default async function CaseDetailPage({ params }: Params) {
 
   const ownFirmAdmin =
     profile.role === "firm_admin" && caseItem.firm_id === profile.firm_id;
+  const caseLead = caseItem.members.some(
+    (member) => member.user_id === profile.id && member.role === "lead",
+  );
   const [documentsResult, outgoing, incoming, firmMembersResult] =
     await Promise.all([
       serverApi<{ data: DocumentRecord[] }>(
         `/cases/${caseId}/documents?scope=${ownFirmAdmin ? "firm" : "mine"}`,
       ),
-      serverApi<TransferList>("/transfers?direction=outgoing"),
-      serverApi<TransferList>("/transfers?direction=incoming"),
-      serverApi<{ data: Profile[] }>("/firms/members"),
+      caseItem.firm_id === profile.firm_id
+        ? serverApi<TransferList>(`/transfers?direction=outgoing&case_id=${caseId}`)
+        : Promise.resolve({ data: [] }),
+      caseItem.firm_id !== profile.firm_id
+        ? serverApi<TransferList>(`/transfers?direction=incoming&case_id=${caseId}`)
+        : Promise.resolve({ data: [] }),
+      (ownFirmAdmin || caseLead) && caseItem.status !== "archived"
+        ? serverApi<{ data: Profile[] }>("/firms/members")
+        : Promise.resolve({ data: [] }),
     ]);
 
-  const transfers = [...outgoing.data, ...incoming.data]
-    .filter((transfer) => transfer.case_id === caseId)
-    .filter(
-      (transfer, index, all) =>
-        all.findIndex((item) => item.id === transfer.id) === index,
-    );
-
-  const firmMembers = firmMembersResult.data;
+  const transfers = [...outgoing.data, ...incoming.data];
+  const namesById = new Map(
+    caseItem.members.map((member) => [member.user_id, member.profile.full_name]),
+  );
   const uploaderNames = Object.fromEntries(
     documentsResult.data.map((document) => [
       document.uploaded_by,
-      caseItem.members.find(
-        (member) => member.user_id === document.uploaded_by,
-      )?.profile.full_name ?? "Unknown",
+      namesById.get(document.uploaded_by) ?? "Unknown",
     ]),
   );
 
@@ -73,7 +76,7 @@ export default async function CaseDetailPage({ params }: Params) {
       documents={documentsResult.data}
       members={caseItem.members}
       transfers={transfers}
-      firmMembers={firmMembers}
+      firmMembers={firmMembersResult.data}
       uploaderNames={uploaderNames}
       user={profile}
     />

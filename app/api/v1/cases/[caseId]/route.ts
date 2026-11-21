@@ -145,6 +145,7 @@ export async function PATCH(
       .single<CaseRecord>();
 
     if (error) {
+      if (error.code === "PT409") throw ApiError.conflict(error.message);
       if (error.code === "23505") {
         throw ApiError.conflict("A case with this reference already exists.");
       }

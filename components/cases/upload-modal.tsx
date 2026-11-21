@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
+  ShieldAlert,
   ShieldCheck,
   UploadCloud,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import {
 } from "@/app/(app)/cases/actions";
 import type { SecurityLevel } from "@/lib/types";
 import { formatBytes } from "@/lib/format";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, MAX_UPLOAD_MESSAGE } from "@/lib/upload-limit";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +32,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 
-type Step = "select" | "uploading" | "scanning" | "complete";
+type Step = "select" | "uploading" | "scanning" | "complete" | "quarantined";
 
 const LEVEL_NAMES: Record<SecurityLevel, string> = {
   1: "Standard",
@@ -56,6 +58,7 @@ export function UploadModal({
   const [error, setError] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState(0);
   const [dragging, setDragging] = React.useState(false);
+  const [pendingScanId, setPendingScanId] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -69,6 +72,7 @@ export function UploadModal({
       setStep("select");
       setFile(null);
       setProgress(0);
+      setPendingScanId(null);
       setError(null);
       setDescription("");
       setLevel(String(defaultLevel));
@@ -77,13 +81,16 @@ export function UploadModal({
 
   function acceptFile(nextFile: File | undefined) {
     setError(null);
+    setPendingScanId(null);
     if (!nextFile) return;
     if (!nextFile.name.toLowerCase().endsWith(".pdf")) {
+      setFile(null);
       setError("Only PDF documents are accepted.");
       return;
     }
-    if (nextFile.size > 104857600) {
-      setError("The maximum document size is 100 MB.");
+    if (nextFile.size > MAX_UPLOAD_BYTES) {
+      setFile(null);
+      setError(MAX_UPLOAD_MESSAGE);
       return;
     }
     setFile(nextFile);
@@ -95,6 +102,10 @@ export function UploadModal({
       return;
     }
     setError(null);
+    if (pendingScanId) {
+      await finishUpload(pendingScanId, file.name);
+      return;
+    }
     setStep("uploading");
     setProgress(4);
 
@@ -127,22 +138,32 @@ export function UploadModal({
       return;
     }
 
+    await finishUpload(created.id, file.name);
+  }
+
+  async function finishUpload(documentId: string, filename: string) {
     setProgress(85);
     setStep("scanning");
-    const completed = await completeUploadAction(created.id);
+    const completed = await completeUploadAction(documentId);
     if (!completed.ok) {
       setStep("select");
       setProgress(0);
+      setPendingScanId(completed.retryable ? documentId : null);
       setError(completed.error ?? "The scan could not be completed.");
       return;
     }
 
+    setPendingScanId(null);
+    router.refresh();
+    if (completed.scanStatus !== "clean") {
+      setStep("quarantined");
+      return;
+    }
     setProgress(100);
     setStep("complete");
-    router.refresh();
     toast({
       title: "Document clean — released",
-      description: `${file.name} passed the scan gate and is now available.`,
+      description: `${filename} passed the scan gate and is now available.`,
       variant: "success",
     });
     window.setTimeout(() => onOpenChange(false), 900);
@@ -246,7 +267,7 @@ export function UploadModal({
                     Drop a PDF here, or click to browse
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-400">
-                    PDF only · maximum 100 MB
+                    PDF only · maximum {MAX_UPLOAD_MB} MB
                   </p>
                 </>
               )}
@@ -373,6 +394,13 @@ export function UploadModal({
           </div>
         )}
 
+        {step === "quarantined" && (
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            The PDF failed validation and remains quarantined. It can’t be opened or shared.
+          </div>
+        )}
+
         <DialogFooter>
           {step === "select" ? (
             <>
@@ -385,9 +413,11 @@ export function UploadModal({
               </Button>
               <Button type="button" onClick={startUpload} disabled={!file}>
                 <UploadCloud className="h-4 w-4" aria-hidden />
-                Upload document
+                {pendingScanId ? "Retry validation" : "Upload document"}
               </Button>
             </>
+          ) : step === "quarantined" ? (
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>Close</Button>
           ) : (
             <p className="text-[10px] text-slate-400">
               Keep this window open until the scan gate completes.

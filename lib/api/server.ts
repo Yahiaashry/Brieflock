@@ -1,5 +1,7 @@
-import { headers } from "next/headers";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { cache } from "react";
+import { getServerAuth } from "@/lib/auth/server";
+import { appOrigin } from "@/lib/app-origin";
+import { internalFetch } from "@/lib/api/internal-fetch";
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -20,25 +22,12 @@ export class ApiClientError extends Error {
   }
 }
 
-export async function serverApi<T>(
+async function performServerApi<T>(
   path: string,
-  init: RequestInit = {},
-  accessToken?: string,
+  init: RequestInit,
+  token: string,
 ): Promise<T> {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const token = accessToken ?? session?.access_token;
-
-  if (!token) {
-    throw new ApiClientError(401, "UNAUTHENTICATED", "Authentication required.");
-  }
-
-  const incoming = await headers();
-  const protocol = incoming.get("x-forwarded-proto") ?? "http";
-  const host = incoming.get("host") ?? "localhost:3000";
-  const url = `${protocol}://${host}/api/v1${path}`;
+  const url = new URL(`/api/v1${path}`, appOrigin());
 
   const requestHeaders = new Headers(init.headers);
   requestHeaders.set("Authorization", `Bearer ${token}`);
@@ -46,10 +35,11 @@ export async function serverApi<T>(
     requestHeaders.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(url, {
+  const response = await internalFetch(url, {
     ...init,
     headers: requestHeaders,
     cache: "no-store",
+    redirect: "error",
   });
 
   if (response.status === 204) return null as T;
@@ -68,4 +58,31 @@ export async function serverApi<T>(
   }
 
   return body as T;
+}
+
+/**
+ * GETs are deduplicated per server request by React. This removes the repeated
+ * HTTP/auth work when a layout, page and generateMetadata need the same object.
+ */
+const cachedGet = cache(async (path: string, token: string) =>
+  performServerApi<unknown>(path, { method: "GET" }, token),
+);
+
+export async function serverApi<T>(
+  path: string,
+  init: RequestInit = {},
+  accessToken?: string,
+): Promise<T> {
+  const token = accessToken ?? (await getServerAuth()).accessToken;
+
+  if (!token) {
+    throw new ApiClientError(401, "UNAUTHENTICATED", "Authentication required.");
+  }
+
+  const method = (init.method ?? "GET").toUpperCase();
+  if (method === "GET" && init.body == null && init.headers == null) {
+    return cachedGet(path, token) as Promise<T>;
+  }
+
+  return performServerApi<T>(path, init, token);
 }

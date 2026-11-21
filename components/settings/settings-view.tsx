@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/toast";
 
 const roleLabels = {
   firm_admin: "Firm administrator",
+  security: "Security personnel",
   lawyer: "Lawyer",
   paralegal: "Paralegal",
 } as const;

@@ -62,7 +62,7 @@ export function DownloadDocumentButton({
       title={
         blocked
           ? "L3 downloads are disabled for this case while it is view-only"
-          : "Download a watermarked copy"
+          : "Download the original PDF (audit-logged)"
       }
     >
       {pending ? (

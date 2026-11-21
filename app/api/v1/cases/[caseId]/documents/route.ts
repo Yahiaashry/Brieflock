@@ -71,6 +71,7 @@ export async function GET(
       )
       .eq("case_id", caseId)
       .eq("superseded", superseded)
+      .is("purge_claimed_at", null)
       .order("uploaded_at", { ascending: false })
       .limit(limit);
 
@@ -80,28 +81,24 @@ export async function GET(
     if (scanStatus) {
       documentsQuery = documentsQuery.eq("scan_status", scanStatus);
     }
-
-    const { data, error } =
-      await documentsQuery.returns<DocumentListRow[]>();
-    if (error) throw new Error("Unable to load documents.");
-
-    let acceptedDocumentIds: Set<string> | null = null;
+    if (scope === "mine") {
+      documentsQuery = documentsQuery.eq("security_level", profile.clearance_level);
+    }
     if (access.caseRecord.firm_id !== profile.firm_id) {
-      acceptedDocumentIds = await acceptedTransferDocumentIds(
+      const acceptedDocumentIds = await acceptedTransferDocumentIds(
         auth.supabase,
         profile,
         caseId,
       );
+      if (acceptedDocumentIds.size === 0) {
+        return jsonResponse({ data: [], page: { next_cursor: null } }, request);
+      }
+      documentsQuery = documentsQuery.in("id", [...acceptedDocumentIds]);
     }
 
-    const visible = (data ?? []).filter((document) => {
-      if (acceptedDocumentIds && !acceptedDocumentIds.has(document.id)) {
-        return false;
-      }
-      if (scope === "firm") return true;
-      return document.security_level === profile.clearance_level;
-    });
-
+    const { data, error } = await documentsQuery.returns<DocumentListRow[]>();
+    if (error) throw new Error("Unable to load documents.");
+    const visible = data ?? [];
     const filtered = query
       ? visible.filter(
           (document) =>

@@ -295,7 +295,7 @@ export function CaseDetail({
           />
           <div>
             <p className="text-[12px] font-medium text-sky-900">
-              External access — {caseItem.firm_id === "firm_ashcroft" ? "Ashcroft & Vale" : "another firm"}
+              External case access
             </p>
             <p className="text-[11px] leading-5 text-sky-700">
               You are a case member through an accepted transfer. Only the
@@ -371,7 +371,7 @@ export function CaseDetail({
                       ? "Allow L3 downloads?"
                       : "Make L3 documents view-only?",
                     description: allowed
-                      ? "L3 documents in this case become downloadable with the mandatory watermark. The change is audited."
+                      ? "L3 documents in this case become downloadable. In-app viewing keeps the mandatory watermark. The change is audited."
                       : "Downloads of L3 documents will be blocked and logged. Viewing remains available with the mandatory watermark.",
                     confirmLabel: allowed ? "Allow downloads" : "Make view-only",
                   });
@@ -439,10 +439,13 @@ export function CaseDetail({
         </div>
       </div>
 
-      <Tabs defaultValue="documents">
+      <Tabs defaultValue="overview">
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
           <div className="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="grid w-full grid-cols-3 sm:inline-flex sm:w-auto">
+            <TabsList aria-label="Case workspace" className="grid w-full grid-cols-4 sm:inline-flex sm:w-auto">
+              <TabsTrigger value="overview" className="min-w-0 px-1.5 text-[11px] sm:px-3 sm:text-[13px]">
+                Overview
+              </TabsTrigger>
               <TabsTrigger
                 value="documents"
                 className="min-w-0 px-1.5 text-[11px] sm:px-3 sm:text-[13px]"
@@ -475,11 +478,30 @@ export function CaseDetail({
               </TabsTrigger>
             </TabsList>
             <p className="text-[10px] text-slate-400">
-              Signed URLs · TTL 60s · watermarked
+              Signed URLs · TTL 60s · audited
             </p>
           </div>
 
           <div className="p-4 sm:p-5">
+            <TabsContent value="overview" className="mt-0">
+              <div className="max-w-2xl">
+                <h2 className="text-lg font-semibold text-content">Case overview</h2>
+                <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+                  <div>
+                    <dt className="text-xs text-muted">Case reference</dt>
+                    <dd className="mt-1 font-mono text-content">{caseItem.case_reference}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Lead counsel</dt>
+                    <dd className="mt-1 font-medium text-content">{lead?.profile.full_name ?? "Unassigned"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Date opened</dt>
+                    <dd className="mt-1 font-medium text-content">{formatDate(caseItem.created_at)}</dd>
+                  </div>
+                </dl>
+              </div>
+            </TabsContent>
             <TabsContent value="documents" className="mt-0">
               <DocumentsPanel
                 caseItem={caseItem}
@@ -495,7 +517,7 @@ export function CaseDetail({
                 members={members}
                 firmMembers={firmMembers}
                 user={user}
-                canManage={isAdmin}
+                canManage={!archived && !isExternalView && (isAdmin || ownMembership?.role === "lead")}
               />
             </TabsContent>
             <TabsContent value="transfers" className="mt-0">

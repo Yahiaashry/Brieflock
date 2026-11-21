@@ -13,7 +13,7 @@ const UUID_RE =
 
 const patchSchema = z
   .object({
-    role: z.enum(["firm_admin", "lawyer", "paralegal"]).optional(),
+    role: z.enum(["firm_admin", "security", "lawyer", "paralegal"]).optional(),
     clearance_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
     is_active: z.boolean().optional(),
   })

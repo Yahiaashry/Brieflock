@@ -89,7 +89,7 @@ function StatCard({
   href?: string;
 }) {
   const content = (
-    <div className="group flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-xs transition-shadow hover:shadow-sm">
+    <div className="group flex items-start gap-3 rounded-xl border border-line bg-surface p-4">
       <div
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
@@ -99,13 +99,13 @@ function StatCard({
         <Icon className="h-4 w-4" aria-hidden />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
+        <p className="text-xs font-medium text-muted">
           {label}
         </p>
-        <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-900">
+        <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-content">
           {value}
         </p>
-        <p className="mt-0.5 truncate text-[10px] text-slate-400">{hint}</p>
+        <p className="mt-1 text-xs text-muted">{hint}</p>
       </div>
       {href && (
         <ChevronRight className="ml-auto mt-1 h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-0.5" />
@@ -160,9 +160,9 @@ export function CasesView({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Workspace"
-        title="Cases"
-        description="Every matter you can access — clearance-gated and fully audited."
+        eyebrow="Firm workspace"
+        title="Your matters, at a glance"
+        description="Review assigned cases, documents, and incoming transfers."
         actions={<NewCaseDialog />}
       />
 
@@ -175,7 +175,7 @@ export function CasesView({
           tone="border-indigo-100 bg-indigo-50 text-indigo-600"
         />
         <StatCard
-          label="Documents in view"
+          label="Visible document records"
           value={stats.visibleDocuments}
           hint={
             user.role === "firm_admin"

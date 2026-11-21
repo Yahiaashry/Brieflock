@@ -7,7 +7,7 @@
 | **Status** | Draft for implementation |
 | **Supersedes** | Frontend Architecture v0.1 (v1 product: link dashboard, click analytics charts, QR panel) — archived in `docs-v1-archive/` |
 | **Contract** | `DECISIONS.md` (🔒) + `DOMAIN_MODEL.md` (🔒) govern. Screens = `UI_UX_DESIGN.md` §2–§3. API = `API_SPEC.md`. |
-| **Stack** | Next.js 15 App Router · TypeScript · Tailwind CSS · shadcn/ui · SWR (polling/revalidation) · React Hook Form + Zod · Supabase Auth JS (D10) · Vercel (D2) |
+| **Stack** | Next.js 16 App Router · TypeScript · Tailwind CSS · shadcn/ui · SWR (polling/revalidation) · React Hook Form + Zod · Supabase Auth JS (D10) · Vercel (D2) |
 | **Golden rules** | The browser **never decides access** — the frontend renders only what `/api/v1` returns and treats every denial identically; **no third-party scripts** beyond Sentry/LogTail beacons (D8: no analytics vendors); document bytes never touch the main document context except via the sandboxed viewer |
 
 ---

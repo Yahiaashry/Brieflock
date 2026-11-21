@@ -130,7 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'npm' }
+        with: { node-version: '24', cache: 'npm' }
       - run: npm ci
       - run: npm run lint          # eslint + prettier --check
       - run: npx tsc --noEmit      # type check
@@ -141,7 +141,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'npm' }
+        with: { node-version: '24', cache: 'npm' }
       - run: npm ci
       - run: npm run test:unit     # access-rule units, transfer state machine, rate limiter
       - uses: codecov/codecov-action@v4
@@ -172,7 +172,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'npm' }
+        with: { node-version: '24', cache: 'npm' }
       - run: npm ci
       - run: npm run build         # next build
       - name: Assert no server-only secrets in client bundle

@@ -1,4 +1,7 @@
 import { authenticate } from "@/lib/auth";
+import { after } from "next/server";
+import { processWorkspaceNotices } from "@/lib/email/outbox";
+import { emailIsConfigured } from "@/lib/email/transactional";
 import { decideDocumentAccess, watermarkRequired } from "@/lib/access";
 import { writeAudit } from "@/lib/audit";
 import { ApiError, apiRoute, jsonResponse } from "@/lib/errors";
@@ -55,6 +58,20 @@ export async function GET(
         },
         auth.geography,
       );
+
+      if (emailIsConfigured() && profile.firm_id === decision.firm.id) {
+        after(async () => {
+          try {
+            const { error } = await auth.supabase.rpc("queue_denial_notices", {
+              actor_key: profile.id, firm_key: profile.firm_id,
+            });
+            if (error) throw error;
+            await processWorkspaceNotices();
+          } catch {
+            console.error("Unable to process denial notifications.");
+          }
+        });
+      }
 
       if (decision.reason === "DOWNLOAD_BLOCKED_L3") {
         throw ApiError.downloadBlockedL3();

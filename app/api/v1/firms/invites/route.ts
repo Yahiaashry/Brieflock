@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
+import { appOrigin } from "@/lib/app-origin";
+import { sendTransactionalEmail } from "@/lib/email/transactional";
 import { authenticate, requireActiveProfile } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
 import { ApiError, apiRoute, jsonResponse } from "@/lib/errors";
@@ -11,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 const inviteSchema = z.object({
   email: z.string().trim().email(),
-  role: z.enum(["firm_admin", "lawyer", "paralegal"]),
+  role: z.enum(["firm_admin", "security", "lawyer", "paralegal"]),
   clearance_level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
 });
 
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
         action: "firm.updated",
         result: "allow",
         details: {
-          type: "invite_sent",
+          type: "invite_created",
           invite_id: invite.id,
           email_hash: createHash("sha256")
             .update(body.email.toLowerCase())
@@ -88,13 +90,21 @@ export async function POST(request: Request) {
       auth.geography,
     );
 
-    const developmentToken =
-      process.env.NODE_ENV === "production" ? undefined : token;
+    const url = new URL("/invite/accept", appOrigin());
+    url.searchParams.set("token", token);
+    const delivery = await sendTransactionalEmail({
+      to: invite.email,
+      subject: "You have an invitation to BriefLock",
+      text: `Accept your firm's invitation to BriefLock: ${url.toString()}\n\nThe link expires in seven days.`,
+      idempotencyKey: `firm-invite/${invite.id}`,
+    });
 
     return jsonResponse(
       {
         invite,
-        ...(developmentToken ? { invite_token: developmentToken } : {}),
+        delivery,
+        ...(delivery !== "sent" ? { invite_url: url.toString() } : {}),
+        ...(process.env.NODE_ENV !== "production" ? { invite_token: token } : {}),
       },
       request,
       { status: 201 },

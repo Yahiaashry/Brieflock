@@ -49,14 +49,16 @@ export async function writeAudit(
 }
 
 export async function verifyAuditChain(supabase: SupabaseClient) {
-  const { data, error } = await supabase.rpc("audit_chain_verify");
+  const { data, error } = await supabase.rpc("audit_chain_summary").single<{
+    checked: number;
+    first_failure: number | null;
+  }>();
   if (error) throw new Error(`Audit verification failed: ${error.message}`);
 
-  const rows = (data ?? []) as Array<{ chain_seq: number; ok: boolean }>;
-  const firstFailure = rows.find((row) => !row.ok);
+  if (!data) throw new Error("Audit verification returned no result.");
   return {
-    ok: !firstFailure,
-    checked: rows.length,
-    first_failure: firstFailure?.chain_seq ?? null,
+    ok: data.first_failure === null,
+    checked: data.checked,
+    first_failure: data.first_failure,
   };
 }

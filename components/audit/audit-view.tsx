@@ -196,7 +196,7 @@ export function AuditView({
           <Button
             variant="secondary"
             onClick={exportNdjson}
-            disabled={exporting || filtered.length === 0}
+            disabled={exporting}
           >
             {exporting ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

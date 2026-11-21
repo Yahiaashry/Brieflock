@@ -18,7 +18,7 @@ const ACTIVE_CONTENT_MARKERS = [
   "/Launch",
   "/EmbeddedFile",
   "/RichMedia",
-];
+].map((marker) => ({ marker, bytes: Buffer.from(marker, "ascii") }));
 
 export function scanPdf(buffer: Buffer): ScanResult {
   const sha256 = createHash("sha256").update(buffer).digest("hex");
@@ -42,10 +42,9 @@ export function scanPdf(buffer: Buffer): ScanResult {
     };
   }
 
-  const raw = buffer.toString("latin1");
-  const findings = ACTIVE_CONTENT_MARKERS.filter((marker) =>
-    raw.includes(marker),
-  );
+  const findings = ACTIVE_CONTENT_MARKERS
+    .filter(({ bytes }) => buffer.includes(bytes))
+    .map(({ marker }) => marker);
 
   return {
     status: findings.length > 0 ? "infected" : "clean",

@@ -5,14 +5,13 @@ import { ApiError, apiRoute, jsonResponse } from "@/lib/errors";
 import { enforceRateLimit } from "@/lib/ratelimit";
 import { createUploadUrl, storagePath } from "@/lib/storage";
 import type { DocumentRecord } from "@/lib/types";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MESSAGE } from "@/lib/upload-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const MAX_UPLOAD_BYTES = 104_857_600;
 
 const uploadSchema = z.object({
   filename: z
@@ -26,7 +25,7 @@ const uploadSchema = z.object({
     .refine((name) => !name.includes("/") && !name.includes("\\"), {
       message: "Filename must not contain a path.",
     }),
-  size_bytes: z.number().int().positive().max(MAX_UPLOAD_BYTES),
+  size_bytes: z.number().int().positive().max(MAX_UPLOAD_BYTES, MAX_UPLOAD_MESSAGE),
   security_level: z
     .union([z.literal(1), z.literal(2), z.literal(3)])
     .optional(),

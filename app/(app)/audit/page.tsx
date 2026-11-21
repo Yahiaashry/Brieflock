@@ -9,20 +9,20 @@ export const metadata: Metadata = { title: "Audit log" };
 
 export default async function AuditPage() {
   const { profile } = await requireServerProfile();
-  if (profile.role !== "firm_admin") {
+  if (profile.role !== "security") {
     return (
       <AccessDeniedInterstitial
-        code="ACCESS_DENIED"
+        code="AUDIT_RESTRICTED"
         backHref="/cases"
         backLabel="Back to cases"
       />
     );
   }
 
-  const [eventResult, caseResult] = await Promise.all([
-    serverApi<{ data: AuditEvent[] }>("/audit?limit=100"),
-    serverApi<{ data: CaseRecord[] }>("/cases?scope=firm&limit=100"),
-  ]);
+  const eventResult = await serverApi<{
+    data: AuditEvent[];
+    cases: Pick<CaseRecord, "id" | "title" | "case_reference">[];
+  }>("/audit?limit=100");
 
   const actors = new Map<string, Pick<Profile, "id" | "full_name">>();
   for (const event of eventResult.data) {
@@ -39,7 +39,7 @@ export default async function AuditPage() {
     <AuditView
       events={eventResult.data}
       actors={[...actors.values()]}
-      cases={caseResult.data}
+      cases={eventResult.cases}
     />
   );
 }

@@ -7,7 +7,7 @@
 | **Status** | Draft for implementation |
 | **Supersedes** | Backend Architecture v0.1 (v1 product: link CRUD, redirect worker, click ingestion, TTL locks) — archived in `docs-v1-archive/` |
 | **Contract** | `DECISIONS.md` (🔒) + `DOMAIN_MODEL.md` (🔒) govern. API surface = `API_SPEC.md` §2. Schema = `DATABASE_SCHEMA.md`. |
-| **Runtime** | Vercel serverless (Next.js 15 route handlers) — **Vercel-only** (D2); no side services |
+| **Runtime** | Vercel serverless (Next.js 16 route handlers) — **Vercel-only** (D2); no side services |
 | **Golden rules** | One access-control engine (`lib/access`) used by every route; audit rows are committed **synchronously before** signed URLs (A1); client bytes never traverse the API; everything auditable within 1 s |
 
 ---
@@ -46,7 +46,7 @@ sequenceDiagram
 
 | Concern | Decision |
 |---|---|
-| Middleware | `middleware.ts`: verifies JWT signature (JWKS cache), sets `x-request-id`, reads Vercel geo headers (D8) into the request context, adds security headers (CSP per FRONTEND_ARCH). Does **not** do authorization. |
+| Middleware | `proxy.ts`: verifies JWT signature (JWKS cache), sets `x-request-id`, reads Vercel geo headers (D8) into the request context, adds security headers (CSP per FRONTEND_ARCH). Does **not** do authorization. |
 | Runtime | Node.js runtime for all `/api/v1` routes (pg client + `digest()` needs); edge only for header work |
 | Timeouts | Route-level `maxDuration` 15 s (upload-complete streams from storage — D11 — may use 30 s) |
 | Correlation | `request_id` (uuid) returned in the error envelope and attached to every log line and Sentry event |
@@ -191,7 +191,7 @@ export async function transition(
 ## 9. Auth Integration — `lib/auth.ts` (D10)
 
 - Supabase Auth (email+password, magic link) owns **all** credentials; this API has no auth endpoints.
-- `middleware.ts` verifies the JWT (JWKS, cached 1 h); route handlers re-resolve the **profile row** on every request — `role`, `clearance_level`, `is_active` come from the DB, never from token claims (a deactivated user fails A1 on their very next request).
+- `proxy.ts` verifies the JWT (JWKS, cached 1 h); route handlers re-resolve the **profile row** on every request — `role`, `clearance_level`, `is_active` come from the DB, never from token claims (a deactivated user fails A1 on their very next request).
 - Service-role client is used **only** inside route handlers; the anon key never reaches the browser.
 - Failed logins surface to the platform as `auth.login_failed` audit rows (`firm_id = null`, visible to operators only — RLS hides them from firm admins).
 

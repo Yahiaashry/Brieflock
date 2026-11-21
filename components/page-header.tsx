@@ -26,11 +26,11 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="truncate text-[22px] font-semibold tracking-tight text-slate-900">
+        <h1 className="break-words text-2xl font-semibold tracking-tight text-content sm:text-[28px]">
           {title}
         </h1>
         {description && (
-          <p className="mt-1 max-w-2xl text-[13px] leading-5 text-slate-500">
+          <p className="mt-1 max-w-2xl text-sm leading-5 text-muted">
             {description}
           </p>
         )}

@@ -125,7 +125,7 @@ export function DocumentViewer({
         {status === "loading" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-[#0b1020]/80 px-3 py-2 text-[10px] text-slate-400 backdrop-blur-sm">
             <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-            Establishing encrypted viewer session…
+            Preparing the sandboxed viewer…
           </div>
         )}
         {status === "error" && (

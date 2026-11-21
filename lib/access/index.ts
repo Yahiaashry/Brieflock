@@ -122,7 +122,7 @@ export async function decideDocumentAccess(
     throw new Error("Unable to load document access context.");
   }
 
-  if (!documentRow || !documentRow.case) {
+  if (!documentRow || !documentRow.case || documentRow.purge_claimed_at || documentRow.purged_at) {
     return { allow: false, notFound: true };
   }
 

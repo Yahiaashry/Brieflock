@@ -1,5 +1,5 @@
 import { authenticate, requireActiveProfile } from "@/lib/auth";
-import { writeAudit } from "@/lib/audit";
+import { loadCaseAccess } from "@/lib/access/cases";
 import { ApiError, apiRoute, jsonResponse } from "@/lib/errors";
 import { enforceRateLimit } from "@/lib/ratelimit";
 import { downloadObject } from "@/lib/storage";
@@ -29,14 +29,24 @@ export async function POST(
       .select("*")
       .eq("id", documentId)
       .eq("uploaded_by", profile.id)
+      .eq("firm_id", profile.firm_id)
       .maybeSingle<DocumentRecord>();
 
     if (error) throw new Error("Unable to load the upload record.");
     if (!document) throw ApiError.notFound();
+    const access = await loadCaseAccess(auth.supabase, profile, document.case_id);
+    if (!access?.membership || access.membership.role === "external") {
+      throw ApiError.notFound();
+    }
+
+    if (document.scan_status === "error") {
+      throw ApiError.validation("Uploaded object is not a valid PDF.");
+    }
 
     if (document.scan_status !== "pending") {
       return jsonResponse(document, request);
     }
+    if (access.caseRecord.status === "archived") throw ApiError.caseArchived();
 
     let bytes: Buffer;
     try {
@@ -51,61 +61,25 @@ export async function POST(
     if (bytes.length > 104_857_600) throw ApiError.payloadTooLarge();
 
     const scan = scanPdf(bytes);
-    if (scan.status === "error") {
+    const { data: updated, error: finalizeError } = await auth.supabase
+      .rpc("finalize_document_scan", {
+        document_key: document.id,
+        actor_key: profile.id,
+        verdict: scan.status,
+        checksum: scan.sha256,
+        method: scan.method,
+        findings: scan.findings,
+        audit_context: auth.geography,
+      })
+      .single<DocumentRecord>();
+    if (finalizeError?.code === "PT404") throw ApiError.notFound();
+    if (finalizeError?.code === "PT403") throw ApiError.forbidden();
+    if (finalizeError?.code === "PT422") throw ApiError.caseArchived();
+    if (finalizeError || !updated) throw new Error("Unable to finalize the upload.");
+    if (updated.scan_status === "error") {
       throw ApiError.validation("Uploaded object is not a valid PDF.", {
         findings: scan.findings,
       });
-    }
-
-    const { data: updated, error: updateError } = await auth.supabase
-      .from("documents")
-      .update({
-        sha256: scan.sha256,
-        scan_status: scan.status,
-        scan_method: scan.method,
-      })
-      .eq("id", documentId)
-      .select("*")
-      .single<DocumentRecord>();
-
-    if (updateError) throw new Error("Unable to finalize the upload.");
-
-    await writeAudit(
-      auth.supabase,
-      {
-        actorUserId: profile.id,
-        firmId: document.firm_id,
-        caseId: document.case_id,
-        documentId: document.id,
-        action: "document.uploaded",
-        result: scan.status === "clean" ? "allow" : "info",
-        details: {
-          size_bytes: bytes.length,
-          sha256: scan.sha256,
-          scan_status: scan.status,
-        },
-      },
-      auth.geography,
-    );
-
-    if (scan.status === "infected") {
-      await writeAudit(
-        auth.supabase,
-        {
-          actorUserId: profile.id,
-          firmId: document.firm_id,
-          caseId: document.case_id,
-          documentId: document.id,
-          action: "document.scan_failed",
-          result: "deny",
-          denyReason: "INFECTED",
-          details: {
-            method: scan.method,
-            findings: scan.findings,
-          },
-        },
-        auth.geography,
-      );
     }
 
     return jsonResponse(updated, request);

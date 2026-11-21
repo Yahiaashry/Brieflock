@@ -295,7 +295,7 @@ brieflock/
 │   └── errors/                  # error envelope + correlation ids (§7)
 ├── db/migrations/               # SQL schema · RLS policies · audit triggers
 ├── components/                  # UI incl. PdfViewer (sandboxed iframe + watermark overlay, W1)
-└── middleware.ts                # edge: rate limit · geo · request-id (§4)
+└── proxy.ts                    # edge: rate limit · geo · request-id (§4)
 ```
 
 ### 3.2 Module responsibilities

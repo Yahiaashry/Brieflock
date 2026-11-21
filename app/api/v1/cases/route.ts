@@ -6,7 +6,12 @@ import { serializeCase } from "@/lib/serializers/cases";
 import { writeAudit } from "@/lib/audit";
 import { ApiError, apiRoute, jsonResponse } from "@/lib/errors";
 import { enforceRateLimit } from "@/lib/ratelimit";
-import type { CaseRecord, SecurityLevel } from "@/lib/types";
+import type {
+  CaseRecord,
+  CaseWithMeta,
+  ComposerDocument,
+  SecurityLevel,
+} from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +32,7 @@ export async function GET(request: Request) {
     const params = new URL(request.url).searchParams;
     const scope = params.get("scope") ?? "mine";
     const status = params.get("status");
+    const include = params.get("include");
     const query = (params.get("q") ?? "").trim().toLowerCase();
     const limit = Math.min(
       100,
@@ -36,6 +42,10 @@ export async function GET(request: Request) {
     if (scope !== "mine" && scope !== "firm") {
       throw ApiError.validation("scope must be mine or firm.");
     }
+    if (include !== null && include !== "documents") {
+      throw ApiError.validation("include must be documents.");
+    }
+    const includeDocuments = include === "documents";
     if (scope === "firm" && profile.role !== "firm_admin") {
       throw ApiError.forbidden();
     }
@@ -99,6 +109,30 @@ export async function GET(request: Request) {
 
     if (documentsError) throw new Error("Unable to load case documents.");
 
+    let composerDocuments: Array<
+      ComposerDocument & {
+        case_id: string;
+        firm_id: string;
+        superseded: boolean;
+      }
+    > = [];
+
+    if (includeDocuments && caseIds.length > 0) {
+      const { data, error } = await auth.supabase
+        .from("documents")
+        .select(
+          "id, case_id, firm_id, filename, size_bytes, security_level, scan_status, description, uploaded_at, superseded",
+        )
+        .in("case_id", caseIds)
+        .eq("firm_id", profile.firm_id)
+        .eq("security_level", profile.clearance_level)
+        .eq("scan_status", "clean")
+        .eq("superseded", false);
+
+      if (error) throw new Error("Unable to load composer documents.");
+      composerDocuments = (data ?? []) as unknown as typeof composerDocuments;
+    }
+
     const acceptedByCase = new Map<string, Set<string>>();
     await Promise.all(
       filteredCases
@@ -126,6 +160,33 @@ export async function GET(request: Request) {
         acceptedByCase.get(caseRecord.id),
       ),
     );
+
+    if (includeDocuments) {
+      const documentsByCase = new Map<string, ComposerDocument[]>();
+      for (const document of composerDocuments) {
+        if (document.superseded || document.scan_status !== "clean") continue;
+        // Composer documents are only for the caller's own firm and exact
+        // clearance; accepted external cases are not composable transfers.
+        if (document.firm_id !== profile.firm_id) continue;
+        if (document.security_level !== profile.clearance_level) continue;
+
+        const list = documentsByCase.get(document.case_id) ?? [];
+        list.push({
+          id: document.id,
+          filename: document.filename,
+          size_bytes: document.size_bytes,
+          security_level: document.security_level,
+          scan_status: document.scan_status,
+          description: document.description,
+          uploaded_at: document.uploaded_at,
+        });
+        documentsByCase.set(document.case_id, list);
+      }
+
+      for (const item of data as CaseWithMeta[]) {
+        item.documents = documentsByCase.get(item.id) ?? [];
+      }
+    }
 
     return jsonResponse(
       { data, page: { next_cursor: null } },

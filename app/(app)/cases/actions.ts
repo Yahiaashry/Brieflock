@@ -12,6 +12,8 @@ export interface ActionResult {
   ok: boolean;
   error?: string;
   id?: string;
+  scanStatus?: DocumentRecord["scan_status"];
+  retryable?: boolean;
   upload?: {
     method: "PUT";
     url: string;
@@ -114,9 +116,12 @@ export async function completeUploadAction(
     );
     revalidatePath(`/cases/${completed.case_id}`);
     revalidatePath("/cases");
-    return { ok: true, id: completed.id };
+    return { ok: true, id: completed.id, scanStatus: completed.scan_status };
   } catch (error) {
-    return failure(error);
+    return {
+      ...failure(error),
+      retryable: !(error instanceof ApiClientError) || error.status >= 500 || error.status === 429,
+    };
   }
 }
 

@@ -4,6 +4,7 @@ import { MailX, ShieldAlert } from "lucide-react";
 import { InviteAcceptForm } from "@/components/auth/invite-accept-form";
 import { Button } from "@/components/ui/button";
 import { getInvitePreview } from "@/app/(auth)/actions";
+import { getServerAuth } from "@/lib/auth/server";
 
 export const metadata: Metadata = { title: "Accept invitation" };
 
@@ -38,5 +39,6 @@ export default async function InviteAcceptPage({
     );
   }
 
-  return <InviteAcceptForm token={params.token ?? "demo"} preview={preview} />;
+  const { user } = await getServerAuth();
+  return <InviteAcceptForm token={params.token ?? "demo"} preview={preview} signedIn={Boolean(user)} />;
 }

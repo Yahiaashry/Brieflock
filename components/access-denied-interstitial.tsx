@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 type DenialCode =
   | "ACCESS_DENIED"
+  | "AUDIT_RESTRICTED"
   | "DOWNLOAD_BLOCKED_L3"
   | "CASE_ARCHIVED"
   | "NOT_FOUND"
@@ -14,6 +15,11 @@ const copy: Record<
   DenialCode,
   { title: string; body: string; extra?: string; icon: typeof Lock }
 > = {
+  AUDIT_RESTRICTED: {
+    title: "Audit access is restricted to security personnel.",
+    body: "An active Security personnel role is required to review or export your firm's audit history. Firm administrators manage role assignments in Members.",
+    icon: Lock,
+  },
   ACCESS_DENIED: {
     title: "You don't have access to this document.",
     body: "This may be outside your clearance, outside your firm's cases, or the document may be quarantined.",

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -10,7 +11,11 @@ export interface ServerAuth {
   accessToken: string | null;
 }
 
-export async function getServerAuth(): Promise<ServerAuth> {
+/**
+ * React caches this per server request, so layouts, pages, metadata and server
+ * actions that all need the signed-in user share one auth/profile lookup.
+ */
+export const getServerAuth = cache(async (): Promise<ServerAuth> => {
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
@@ -34,7 +39,7 @@ export async function getServerAuth(): Promise<ServerAuth> {
     profile: profile ?? null,
     accessToken: session?.access_token ?? null,
   };
-}
+});
 
 export async function requireServerUser(): Promise<ServerAuth> {
   const auth = await getServerAuth();

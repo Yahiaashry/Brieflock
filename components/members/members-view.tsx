@@ -62,6 +62,7 @@ import { useToast } from "@/components/ui/toast";
 
 const roleLabels: Record<Role, string> = {
   firm_admin: "Firm administrator",
+  security: "Security personnel",
   lawyer: "Lawyer",
   paralegal: "Paralegal",
 };
@@ -74,6 +75,7 @@ const clearanceNames: Record<ClearanceLevel, string> = {
 
 const roleBadgeVariant: Record<Role, "indigo" | "neutral"> = {
   firm_admin: "indigo",
+  security: "indigo",
   lawyer: "neutral",
   paralegal: "neutral",
 };
@@ -90,6 +92,7 @@ export function MembersView({
   user: Profile;
 }) {
   const [inviteOpen, setInviteOpen] = React.useState(false);
+  const [inviteUrl, setInviteUrl] = React.useState<string | null>(null);
   const [manageTarget, setManageTarget] = React.useState<Profile | null>(null);
   const [activeTarget, setActiveTarget] = React.useState<{
     profile: Profile;
@@ -118,6 +121,7 @@ export function MembersView({
       setEmail("");
       setInviteRole("lawyer");
       setInviteClearance(2);
+      setInviteUrl(null);
       setError(null);
     }
   }, [inviteOpen]);
@@ -142,6 +146,11 @@ export function MembersView({
     setPending(false);
     if (!result.ok) {
       setError(result.error ?? "The invitation could not be sent.");
+      return;
+    }
+    if (result.inviteUrl) {
+      setInviteUrl(result.inviteUrl);
+      router.refresh();
       return;
     }
     setInviteOpen(false);
@@ -472,6 +481,23 @@ export function MembersView({
               the role and clearance you assign.
             </DialogDescription>
           </DialogHeader>
+          {inviteUrl ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted">The invitation is ready. Copy this link and share it privately with the intended recipient.</p>
+              <Input aria-label="Invitation link" value={inviteUrl} readOnly onFocus={(event) => event.currentTarget.select()} />
+              <DialogFooter>
+                <Button variant="secondary" onClick={() => setInviteOpen(false)}>Done</Button>
+                <Button onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(inviteUrl);
+                    toast({ title: "Invitation link copied", variant: "success" });
+                  } catch {
+                    toast({ title: "Select and copy the invitation link", variant: "error" });
+                  }
+                }}>Copy invitation link</Button>
+              </DialogFooter>
+            </div>
+          ) : (
           <form onSubmit={invite} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="invite-email">Email address</Label>
@@ -497,6 +523,7 @@ export function MembersView({
                   <option value="lawyer">Lawyer</option>
                   <option value="paralegal">Paralegal</option>
                   <option value="firm_admin">Firm administrator</option>
+                  <option value="security">Security personnel</option>
                 </Select>
               </div>
               <div className="space-y-1.5">
@@ -542,6 +569,7 @@ export function MembersView({
               </Button>
             </DialogFooter>
           </form>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -574,6 +602,7 @@ export function MembersView({
                 <option value="lawyer">Lawyer</option>
                 <option value="paralegal">Paralegal</option>
                 <option value="firm_admin">Firm administrator</option>
+                <option value="security">Security personnel</option>
               </Select>
             </div>
             <div className="space-y-1.5">

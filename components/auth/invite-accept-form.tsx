@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import {
   acceptInviteAction,
@@ -23,9 +24,11 @@ export interface InvitePreview {
 export function InviteAcceptForm({
   token,
   preview,
+  signedIn,
 }: {
   token: string;
   preview: InvitePreview;
+  signedIn: boolean;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -98,7 +101,7 @@ export function InviteAcceptForm({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          {!signedIn && <div className="space-y-1.5">
             <Label htmlFor="password">Create a password</Label>
             <div className="relative">
               <Lock
@@ -130,7 +133,7 @@ export function InviteAcceptForm({
             <p className="text-[11px] leading-4 text-slate-400">
               Only documents at exactly your clearance will open for you.
             </p>
-          </div>
+          </div>}
 
           {state.error && (
             <div
@@ -140,6 +143,7 @@ export function InviteAcceptForm({
               {state.error}
             </div>
           )}
+          {state.message && <p role="status" className="rounded-lg bg-tint p-3 text-sm text-content">{state.message}</p>}
 
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? (
@@ -151,6 +155,12 @@ export function InviteAcceptForm({
               "Accept invitation"
             )}
           </Button>
+          {!signedIn && (
+            <Link href={`/login?next=${encodeURIComponent(`/invite/accept?token=${encodeURIComponent(token)}`)}`}
+              className="block text-center text-sm text-brand hover:underline">
+              Already have an account? Sign in
+            </Link>
+          )}
         </form>
       </div>
     </div>

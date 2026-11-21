@@ -51,7 +51,7 @@ Every access, every **denial**, and every administrative change is recorded in a
 | D7 | **Rate limiting:** in-memory per-instance token bucket behind a `RateLimiter` interface (Upstash-ready). |
 | D8 | **GeoIP:** Vercel request geo headers only; no third-party GeoIP. |
 | D9 | **IP privacy:** salted SHA-256 `ip_hash` at ingest; raw IPs never persisted; store country/city. |
-| D10 | **Auth:** Supabase Auth (email/password + magic link); no custom auth endpoints; JWT Bearer; roles `firm_admin` \| `lawyer` \| `paralegal`. |
+| D10 | **Auth:** Supabase Auth (email/password + magic link); no custom auth endpoints; JWT Bearer; roles `firm_admin` \| `security` \| `lawyer` \| `paralegal`. |
 | D11 | **Scanning:** in-function PDF structure validation (magic bytes, embedded-JS heuristics) + quarantine-until-scanned. ClamAV container = fast-follow. Never third-party scanning APIs. |
 | P1 | **Clearance semantics:** exact-match compartments, non-hierarchical. Hierarchical toggle noted, not built. |
 | P2 | **Levels:** case carries a default level; **uploader may raise** a document (audited, correction 7); lowering requires `firm_admin` with reason (audited). |
@@ -59,7 +59,7 @@ Every access, every **denial**, and every administrative change is recorded in a
 | P4 | **Access surface:** authenticated app only; anonymous pages = login/signup/invite-accept only. Share links are a fast-follow. |
 | P5 | **L3:** watermarked view + download by default; per-case `allow_l3_download = false` switches to view-only (download denied + logged). |
 | P6 | **Clearance:** exactly one per user. |
-| P7 | **Firm admins:** metadata + audit visibility only; no content backdoor. |
+| P7 | **Firm admins:** firm metadata and member management; audit visibility belongs only to active `security` personnel. Neither role has a content backdoor. |
 | P8 | **Compliance:** security baseline + GDPR-aligned (processor posture, DPA template, legal hold, retention). SOC 2 post-MVP. |
 | W1 | **Watermark:** viewer full name + UTC timestamp; mandatory L2/L3, optional L1. |
 | A1 | **Audit integrity:** append-only, hash-chained, service-role insert only; content-access events commit **synchronously before** the signed URL; denials carry reason codes. |
@@ -98,10 +98,10 @@ erDiagram
 
 **`firms`** — tenant root. `id uuid pk` · `name text` · `slug citext unique` · `settings jsonb` (retention_days, retention_mode, watermark defaults, l3_view_only default) · `plan text default 'trial'` · `created_at` · `deactivated_at`.
 
-**`profiles`** (extends `auth.users`, 1:1) — `id uuid pk = auth.users.id` · `firm_id fk→firms` · `email citext` · `full_name text` · `role text check in ('firm_admin','lawyer','paralegal')` · `clearance_level int check in (1,2,3)` · `is_active boolean default true` · `created_at` · `deactivated_at`.
-Exactly one clearance per user (P6). `lawyer` vs `paralegal` is an organizational label in MVP — no access-rule difference (admin checks are the only role checks). Deactivation sets `is_active = false` + `deactivated_at`; the row is never deleted (A1 fails with `DEACTIVATED`). Role/clearance changes are admin-only and always audited.
+**`profiles`** (extends `auth.users`, 1:1) — `id uuid pk = auth.users.id` · `firm_id fk→firms` · `email citext` · `full_name text` · `role text check in ('firm_admin','security','lawyer','paralegal')` · `clearance_level int check in (1,2,3)` · `is_active boolean default true` · `created_at` · `deactivated_at`.
+Exactly one clearance per user (P6). `lawyer` vs `paralegal` is an organizational label in MVP — no access-rule difference. Administrative operations require `firm_admin`; audit review requires `security`. Deactivation sets `is_active = false` + `deactivated_at`; the row is never deleted (A1 fails with `DEACTIVATED`). Role/clearance changes are admin-only and always audited.
 
-**`invites`** — `id uuid pk` · `firm_id fk` · `email citext` · `role check (firm_admin|lawyer|paralegal)` · `clearance_level int check 1–3` · `token_hash text unique` (SHA-256 of the emailed token; **raw token never stored**) · `created_by fk→profiles` · `created_at` · `expires_at default now() + 7 days` · `accepted_at`.
+**`invites`** — `id uuid pk` · `firm_id fk` · `email citext` · `role check (firm_admin|security|lawyer|paralegal)` · `clearance_level int check 1–3` · `token_hash text unique` (SHA-256 of the emailed token; **raw token never stored**) · `created_by fk→profiles` · `created_at` · `expires_at default now() + 7 days` · `accepted_at`.
 Acceptance copies role + clearance into the new profile, stamps `accepted_at`, audits `member.added`. Revocation deletes the row; the emailed token then fails as unknown (no existence oracle).
 
 **`cases`** — `id uuid pk` · `firm_id fk` · `title text 1–300` · `case_reference text` (firm-local; `unique (firm_id, case_reference)`) · `default_security_level int check 1–3` (applies to **future uploads only**) · `status check ('open','closed','archived') default 'open'` · `allow_l3_download boolean default true` (P5) · `legal_hold boolean default false` · `retention_days int null check > 0` · `created_by fk→profiles` · `created_at` · `closed_at`.
@@ -133,7 +133,7 @@ Content access is granted **iff all** checks pass, evaluated server-side on ever
 | A5 | `document.scan_status = 'clean'` | `UNSCANNED` / `INFECTED` |
 | A6 | Case not `archived` **for mutations**; view/download continue under the normal gates (correction 8) | `CASE_ARCHIVED` |
 
-- **Admin exception (P7):** admins may read metadata + audit of their firm; **never** content unless A1–A5 pass for them too.
+- **Admin exception (P7):** admins may read firm metadata; only active `security` personnel may read/export their firm audit; **never** content unless A1–A5 pass for them too.
 - **L3 download gate (P5):** if `security_level = 3` AND `case.allow_l3_download = false` → view allowed (watermarked), download denied with distinct `DOWNLOAD_BLOCKED_L3` (correction 13), audited as a denial.
 - **Denials:** every skip/deny for an **existing** document by an authenticated caller writes an `audit_events` row (`result='deny'`, canonical `deny_reason`). Unknown or cross-firm document UUIDs → uniform `404`, no audit row (correction 12); rate limiting + RLS are the probe controls.
 - **Uniform body:** all A2–A6 failures return generic `403 ACCESS_DENIED`; the specific reason lives only in `audit_events` (anti-probing).
@@ -289,7 +289,7 @@ A document is **past retention** when `uploaded_at + coalesce(case.retention_day
 - Every table carries `firm_id` (or resolves to one via a parent). RLS makes cross-firm rows **structurally invisible** — including through search, counts, joins, and error messages.
 - Helper predicates (all `security definer`, `stable`, `set search_path = public`): `auth_firm_id()` · `is_firm_admin()` · `is_case_member(case)` · `can_see_document(doc)` (A2 ∧ A3 ∧ A4 via own-firm or accepted-transfer branch) · `can_see_transfer(t)`.
 - Deactivated profiles lose visibility immediately — every helper re-checks `is_active`.
-- `audit_events`: SELECT only for firm admins on firm-scoped rows; rows with `firm_id is null` (platform-level) invisible to firm admins; no writes from client roles.
+- `audit_events`: SELECT only for active security personnel on firm-scoped rows; rows with `firm_id is null` (platform-level) invisible to firm users; no writes from client roles.
 - `documents`/`case_members`/`transfers`/`transfer_items`: no client-role writes (service role only).
 - The app rule (§4.3) is authoritative; RLS is the structural backstop (defense in depth). The automated **cross-firm RLS test suite is a release blocker** (§19).
 
@@ -329,7 +329,7 @@ Middleware mints/propagates a `correlation_id` (`req_…`) attached to logs, aud
 | Cases | `POST/GET /cases` · `GET/PATCH /cases/{caseId}` · case-member routes |
 | Documents | `POST /cases/{caseId}/documents/upload-intent` · `POST /documents/{documentId}/complete` · `GET /cases/{caseId}/documents` · `GET /documents/{documentId}` · `GET /documents/{documentId}/content?disposition=view\|download` · `PATCH /documents/{documentId}/level` |
 | Transfers | `POST/GET /transfers` · `GET/PATCH /transfers/{transferId}` · `POST /transfers/{transferId}/{send\|accept\|reject\|cancel\|revoke}` |
-| Audit | `GET /audit` · `GET /audit/export` (firm admin) |
+| Audit | `GET /audit` · `GET /audit/export` (security personnel only) |
 | Search | `GET /search?q=…` |
 | Jobs | `POST /jobs/{retention-purge\|denial-alerts\|verify-chain\|audit-export}` (`CRON_SECRET`) |
 
@@ -362,7 +362,7 @@ brieflock/
 │   └── seed/                # demo fixtures (L1/L2/L3 users)
 ├── tests/                   # unit · integration · e2e
 ├── docs/                    # frozen v2 reference — NOT maintained
-├── middleware.ts            # edge: rate limits, geo capture, request-id, route gating
+├── proxy.ts                 # edge: rate limits, geo capture, request-id, route gating
 └── CONTRACT.md              # this file
 ```
 
@@ -436,3 +436,16 @@ Domain name (D2 placeholder until named) · ClamAV fast-follow timing (sole non-
 ---
 
 *End of contract. One file, one source of truth. Implementation code lives and dies by this document.*
+
+
+## Security personnel separation (2026-11-21)
+
+User-approved change: `security` is a separate firm role. Only active security
+personnel can view/export their firm's audit events, through the UI, API, or
+Supabase RLS. Firm administrators invite members and assign roles/clearance;
+they do not receive audit access automatically. Security personnel cannot manage
+members or settings unless their role is changed by an administrator, and have
+no document access bypass: firm/grant, membership, exact clearance and scan gates
+still apply. Repeated-denial notices go only to active security personnel.
+Transfer transitions write atomic audit entries for both participating firms;
+draft creation remains visible only to the sender.

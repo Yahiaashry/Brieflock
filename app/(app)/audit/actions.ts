@@ -1,6 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
+import { appOrigin } from "@/lib/app-origin";
+import { internalFetch } from "@/lib/api/internal-fetch";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export interface AuditExportResult {
@@ -31,16 +32,18 @@ export async function exportAuditAction(
     params.set("to", new Date(`${to}T23:59:59.999Z`).toISOString());
   }
 
-  const incoming = await headers();
-  const protocol = incoming.get("x-forwarded-proto") ?? "http";
-  const host = incoming.get("host") ?? "localhost:3000";
-  const response = await fetch(
-    `${protocol}://${host}/api/v1/audit/export?${params.toString()}`,
-    {
+  const url = new URL("/api/v1/audit/export", appOrigin());
+  url.search = params.toString();
+  let response: Response;
+  try {
+    response = await internalFetch(url, {
       headers: { Authorization: `Bearer ${session.access_token}` },
       cache: "no-store",
-    },
-  );
+      redirect: "error",
+    });
+  } catch {
+    return { ok: false, error: "The audit export could not be created. Try again." };
+  }
 
   const text = await response.text();
   if (!response.ok) {

@@ -7,38 +7,51 @@ on:
     branches: [main]
 
 jobs:
-  readiness:
-    # Skips verification until the app is scaffolded (package-lock.json committed).
-    runs-on: ubuntu-latest
-    outputs:
-      ready: ${{ steps.check.outputs.ready }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: check
-        run: |
-          if [ -f package-lock.json ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::App not scaffolded yet (no package-lock.json) — skipping verification."
-          fi
-
   verify:
-    needs: readiness
-    if: needs.readiness.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+          cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
 
-  # Added with the corresponding milestones (CONTRACT.md — Release gates):
-  #   rls-suite:   cross-firm invisibility probes against local Supabase (release blocker)
-  #   e2e-matrix:  Playwright 3x3 clearance matrix + transfer journeys on a preview deploy
-  #   chain-verify: audit hash-chain tamper-detection test
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
+      - run: npm ci
+      - run: supabase start
+      - run: supabase test db
+      - run: npx playwright install --with-deps chromium
+      - name: Build and test against seeded Supabase
+        shell: bash
+        run: |
+          export NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+          export NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000
+          export IP_HASH_SALT=ci-only-test-salt-2026
+          export CRON_SECRET=ci-only-test-cron-secret
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          npm run build
+          npm run start -- --hostname 127.0.0.1 > /tmp/brieflock-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          curl --fail --silent --retry 15 --retry-all-errors --retry-delay 1 "$NEXT_PUBLIC_APP_URL/api/v1/health" >/dev/null
+          node --test scripts/workspace.integration.mjs || { cat /tmp/brieflock-server.log; exit 1; }
+          node scripts/security-workspace.mjs --verify || { cat /tmp/brieflock-server.log; exit 1; }
+          npx playwright test || { cat /tmp/brieflock-server.log; exit 1; }

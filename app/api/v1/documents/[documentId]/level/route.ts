@@ -71,6 +71,9 @@ export async function PATCH(
       if (!membership || membership.role === "external") {
         throw ApiError.forbidden();
       }
+      if (document.uploaded_by !== profile.id) {
+        throw ApiError.forbidden();
+      }
     } else {
       if (profile.role !== "firm_admin") throw ApiError.forbidden();
       if (!body.reason) {

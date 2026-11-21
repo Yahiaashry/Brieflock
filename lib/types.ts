@@ -1,6 +1,6 @@
 export type SecurityLevel = 1 | 2 | 3;
 export type ClearanceLevel = 1 | 2 | 3;
-export type Role = "firm_admin" | "lawyer" | "paralegal";
+export type Role = "firm_admin" | "security" | "lawyer" | "paralegal";
 export type CaseStatus = "open" | "closed" | "archived";
 export type ScanStatus = "pending" | "clean" | "infected" | "error";
 export type TransferStatus =
@@ -120,6 +120,7 @@ export interface DocumentRecord {
   superseded: boolean;
   retention_marked_at?: string | null;
   purged_at?: string | null;
+  purge_claimed_at?: string | null;
 }
 
 export interface TransferItem {
@@ -174,10 +175,23 @@ export interface AuditEvent {
   entry_hash: string;
 }
 
+export type ComposerDocument = Pick<
+  DocumentRecord,
+  | "id"
+  | "filename"
+  | "size_bytes"
+  | "security_level"
+  | "scan_status"
+  | "description"
+  | "uploaded_at"
+>;
+
 export interface CaseWithMeta extends CaseRecord {
   members: (CaseMember & { profile: Profile })[];
   visible_document_count: number;
   last_upload_at: string | null;
+  /** Present when the cases endpoint is called with `include=documents`. */
+  documents?: ComposerDocument[];
 }
 
 export interface TransferWithMeta extends Transfer {

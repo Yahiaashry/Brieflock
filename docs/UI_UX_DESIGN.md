@@ -7,7 +7,7 @@
 | **Status** | Draft for implementation |
 | **Supersedes** | UI/UX v0.1 (v1 product: short-link dashboard, link table, click analytics, QR codes) — archived in `docs-v1-archive/` |
 | **Contract** | `DECISIONS.md` (🔒) + `DOMAIN_MODEL.md` (🔒) govern. Access rule A1–A6 and the diagonal clearance matrix (§3.3) shape every screen. |
-| **Stack** | Next.js 15 App Router · TypeScript · Tailwind CSS · shadcn/ui · pdf.js viewer (FRONTEND_ARCH §4) |
+| **Stack** | Next.js 16 App Router · TypeScript · Tailwind CSS · shadcn/ui · pdf.js viewer (FRONTEND_ARCH §4) |
 | **Golden rules** | (1) **Never leak** — the UI never reveals the existence, filename, or level of a document/case the user can't access. (2) **Denial clarity without disclosure** — uniform denial states, exact reasons visible only to admins in the audit view. (3) **Clearance is identity** — every user always knows their own clearance and what it means. (4) **Watermark is not optional** for L2/L3 (W1). |
 
 ---

@@ -15,7 +15,7 @@ BriefLock is a **secure document exchange and case-file management platform for 
 
 The stack below supports a **1-month MVP**, a **security-first product posture**, and a **serverless, zero-infrastructure-management** operating model locked to **Vercel** (D2), with **Supabase** providing Postgres + Auth + Storage in one security boundary.
 
-**Primary selection:** TypeScript · Next.js 15 (App Router) · React 19 · Tailwind CSS v4 · shadcn/ui + Radix UI · Supabase (PostgreSQL + Auth + Storage) · pdf.js (sandboxed watermarked viewer) · file-type/magic-bytes scan gate (D11) · Vercel · Vitest + RTL + Playwright · GitHub Actions.
+**Primary selection:** TypeScript · Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · shadcn/ui + Radix UI · Supabase (PostgreSQL + Auth + Storage) · pdf.js (sandboxed watermarked viewer) · file-type/magic-bytes scan gate (D11) · Vercel · Vitest + RTL + Playwright · GitHub Actions.
 
 ---
 
@@ -24,7 +24,7 @@ The stack below supports a **1-month MVP**, a **security-first product posture**
 | # | Category | Technology | Version | Rationale |
 |---|----------|------------|---------|-----------|
 | 1 | Language | **TypeScript** | 5.x | Static typing, first-class Next.js/Supabase/Vercel support, fewer runtime defects in security-critical logic (access rule, audit hash-chain, scan gate). |
-| 2 | Frontend framework | **Next.js (App Router)** | 15.x | Server Components, streaming, Route Handlers for the `/api/v1` REST API, edge middleware for rate limiting (D7) and geo headers (D8), Vercel-native (D2), Turbopack dev. |
+| 2 | Frontend framework | **Next.js (App Router)** | 16.x | Server Components, streaming, Route Handlers for the `/api/v1` REST API, edge middleware for rate limiting (D7) and geo headers (D8), Vercel-native (D2), Turbopack dev. |
 | 3 | UI library | **React** | 19.x | Industry-standard component model, concurrent features, massive ecosystem, Next.js first-class citizen. |
 | 4 | Styling | **Tailwind CSS** | v4 | Utility-first, no runtime CSS-in-JS overhead, rapid UI iteration, excellent shadcn/ui integration. |
 | 5 | UI components + icons | **shadcn/ui + Radix UI + Lucide React** | Latest | Copy/paste component source (owned by the project, not a locked dependency), accessible Radix primitives (dialogs, tables, toasts for denial notices), tree-shakable Lucide icons. |
@@ -34,7 +34,7 @@ The stack below supports a **1-month MVP**, a **security-first product posture**
 | 9 | Database | **Supabase PostgreSQL** | Latest | Managed Postgres, ACID, **RLS firm-scoped multi-tenancy**, **pgcrypto** for the audit hash-chain, **pg_cron** sweep jobs (D6), TypeScript type generation from schema. |
 | 10 | File storage | **Supabase Storage** | Latest | **Private buckets only**, object path `{firm_id}/{case_id}/{document_id}/{filename}`, **signed URLs with TTL ≤ 60 s**, same security boundary and region as the database; storage policies aligned with RLS. |
 | 11 | Auth | **Supabase Auth** (primary) / **Clerk** (alternative) | Latest | Email/password + magic link (D10), deep Postgres/RLS integration (`auth.uid()`), JWT Bearer for the API, **no custom auth endpoints**; roles `firm_admin`/`lawyer`/`paralegal` + one clearance per user. |
-| 12 | API layer | **Next.js Route Handlers** (App Router) | 15.x | REST `/api/v1` (documents, transfers, audit, search, health — N1) co-located with the app; in-process access-control service; `RateLimiter` interface (D7, in-memory MVP → Upstash later); cron endpoints behind `CRON_SECRET`. |
+| 12 | API layer | **Next.js Route Handlers** (App Router) | 16.x | REST `/api/v1` (documents, transfers, audit, search, health — N1) co-located with the app; in-process access-control service; `RateLimiter` interface (D7, in-memory MVP → Upstash later); cron endpoints behind `CRON_SECRET`. |
 | 13 | Document viewer | **pdf.js (Mozilla)** | Latest (5.x) | Client-side canvas rendering inside a **CSP-locked sandboxed iframe**; dynamic **watermark overlay** (viewer full name + UTC timestamp, W1); no third-party viewer service ever touches client files. |
 | 14 | Upload validation & scan gate | **file-type (npm) + custom magic-bytes / PDF structure checks**; **ClamAV container** (fast-follow) | Latest (ESM) / — | D11 MVP: in-function PDF validation (magic bytes, size ≤ 100 MB, embedded-JS heuristics) + **quarantine-until-scanned** (`scan_status != 'clean'` blocks all access). ClamAV = documented fast-follow, the **only future non-Vercel infra piece**. Client files are **never** sent to third-party scanning APIs. |
 | 15 | Deployment | **Vercel** (primary) / **Railway** (alternative) | Platform | Next.js-native edge platform, preview deployments per PR, generous Hobby tier, zero-config CI/CD. **D2 locks the app to Vercel**; sole documented exception: the D11 ClamAV fast-follow container. |
@@ -448,7 +448,7 @@ The dominant real-world threat for a law-firm exchange is a malicious PDF reachi
 | Decision | Selected | Alternative considered | Date | Reason |
 |----------|----------|----------------------|------|--------|
 | Language | TypeScript 5.x | JavaScript | — | Type safety for security-critical logic (access rule, audit chain, scan gate) |
-| Framework | Next.js 15 (App Router) | Remix, Nuxt | — | Vercel-native, Route Handlers for `/api/v1`, React Server Components, middleware for rate limiting/geo |
+| Framework | Next.js 16 (App Router) | Remix, Nuxt | — | Vercel-native, Route Handlers for `/api/v1`, React Server Components, middleware for rate limiting/geo |
 | Database | Supabase Postgres (serverless) | Firebase, PlanetScale, self-hosted Postgres | — | Relational + ACID, firm-scoped RLS multi-tenancy, pgcrypto hash-chain, pg_cron sweeps, no-ops |
 | **File storage** | **Supabase Storage (private buckets)** | AWS S3/GCS + separate signing service, Cloudflare R2 | v2.0 | Private-only buckets co-located with DB/Auth, storage policies mirroring RLS, signed URLs TTL ≤ 60 s, S3-compatible exit path |
 | Auth | Supabase Auth | Clerk | — | Same provider as DB + Storage, RLS integration (`auth.uid()`), no custom auth endpoints (D10), OIDC exit path |

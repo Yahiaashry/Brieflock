@@ -28,14 +28,14 @@ export async function inviteMemberAction(input: {
   email: string;
   role: Role;
   clearance_level: ClearanceLevel;
-}): Promise<MemberActionResult> {
+}): Promise<MemberActionResult & { inviteUrl?: string }> {
   try {
-    await serverApi("/firms/invites", {
+    const result = await serverApi<{ invite_url?: string }>("/firms/invites", {
       method: "POST",
       body: JSON.stringify(input),
     });
     revalidateMemberSurfaces();
-    return { ok: true };
+    return { ok: true, inviteUrl: result.invite_url };
   } catch (error) {
     return failure(error);
   }
