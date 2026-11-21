@@ -18,11 +18,11 @@ Secure document exchange and case-file management platform for law firms.
 
 | Path | Purpose |
 |---|---|
-| `CONTRACT.md` | The single normative contract — decisions, domain model, access rule, jobs, env inventory |
+| `CONTRACT.md` | The single normative contract — decisions, domain model, access rule, jobs, env inventory. |
 | `docs/` | Frozen v2 reference documents (PRD, architecture, API spec, security, etc.) |
 | `supabase/` | Migrations: schema, RLS suite, functions/triggers, pg_cron jobs |
 | `.env.example` | Full environment-variable inventory |
-| `.github/workflows/ci.yml` | Lint, types, Vitest, production build, database policy tests, and browser journeys |
+| `.github/workflows/ci.yml` | Lint, types, Vitest, production build, database policy tests, and browser journeys. |
 
 ## Stack
 
